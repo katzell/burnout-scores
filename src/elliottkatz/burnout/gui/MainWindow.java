@@ -13,6 +13,8 @@ import java.awt.event.KeyEvent;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -24,8 +26,11 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListModel;
 import javax.swing.SwingConstants;
 import javax.swing.border.MatteBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 
 import elliottkatz.burnout.dao.ScoreDao;
@@ -33,6 +38,7 @@ import elliottkatz.burnout.level.Level;
 import elliottkatz.burnout.player.Player;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.ListSelectionModel;
 
 public class MainWindow {
 
@@ -41,8 +47,6 @@ public class MainWindow {
     private JFrame frmBurnoutScores;
     private ScoreTableModel tableModel = new ScoreTableModel();
     private JTable table = new JTable(tableModel);
-    
-    private JComboBox<Level> cmbLevel= new JComboBox<Level>();
     private JLabel lblCurrentPlayer = new JLabel("ROM");
     
     private ScoreDao scoreDao = new ScoreDao();
@@ -56,6 +60,7 @@ public class MainWindow {
 	private JCheckBox chckbxShowRom = new JCheckBox("ROM");
 	private final JCheckBox chckbxShowKat = new JCheckBox("KAT");
 	private final JLabel lblFilterScores = new JLabel("Filter Scores");
+	private final JList<Level> lstLevel = new JList<Level>();
 
     /**
      * Launch the application.
@@ -91,18 +96,7 @@ public class MainWindow {
         frmBurnoutScores.setTitle("Burnout Scores");
         frmBurnoutScores.setBounds(100, 100, 838, 545);
         frmBurnoutScores.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        cmbLevel.setBackground(Color.WHITE);
-        cmbLevel.setFont(new Font("Candara", Font.PLAIN, 14));
-
-        cmbLevel.setBounds(10, 20, 259, 25);
-        cmbLevel.addItemListener(new TableUpdatingListener());
         frmBurnoutScores.getContentPane().setLayout(null);
-        
-        JLabel lblSelectALevel = new JLabel("Level:");
-        lblSelectALevel.setFont(new Font("Candara", Font.PLAIN, 14));
-        lblSelectALevel.setBounds(10, 0, 140, 20);
-        frmBurnoutScores.getContentPane().add(lblSelectALevel);
-        frmBurnoutScores.getContentPane().add(cmbLevel);
         
         lblPlayer = new JLabel("Player:");
         lblPlayer.setFont(new Font("Candara", Font.BOLD, 14));
@@ -113,25 +107,13 @@ public class MainWindow {
         lblPlayer.setBounds(10, 359, 113, 25);
         frmBurnoutScores.getContentPane().add(lblPlayer);
 
-        for (Level level : Level.getAllLevels()) {
-            cmbLevel.addItem(level);
-        }
-        cmbLevel.setRenderer(new BasicComboBoxRenderer() {
-            private static final long serialVersionUID = 1L;
-
-            public Component getListCellRendererComponent(@SuppressWarnings("rawtypes") JList list, Object value, int index, boolean isSelected,
-                    boolean cellHasFocus) {
-                Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                setText(((Level) value).getName());
-                return component;
-            }
-        });
         lblCurrentPlayer.addMouseListener(new MouseAdapter() {
         	@Override
         	public void mouseClicked(MouseEvent e) {
         		switchPlayer();
         	}
         });
+                
         lblCurrentPlayer.setBackground(Color.WHITE);
         lblCurrentPlayer.setOpaque(true);
         lblCurrentPlayer.setHorizontalAlignment(SwingConstants.CENTER);
@@ -143,7 +125,7 @@ public class MainWindow {
         
         scrollPane.setBackground(Color.WHITE);
 
-        scrollPane.setBounds(10, 51, 791, 272);
+        scrollPane.setBounds(171, 24, 630, 299);
         frmBurnoutScores.getContentPane().add(scrollPane);
         table.setRowHeight(20);
         table.setFont(new Font("Candara", Font.PLAIN, 14));
@@ -260,11 +242,43 @@ public class MainWindow {
         
         frmBurnoutScores.getContentPane().add(lblFilterScores);
         
+        JScrollPane scrollPane_1 = new JScrollPane();
+        scrollPane_1.setBounds(10, 24, 151, 299);
+        frmBurnoutScores.getContentPane().add(scrollPane_1);
+        scrollPane_1.setViewportView(lstLevel);
+        
+        lstLevel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        lstLevel.setOpaque(true);
+        lstLevel.setBackground(Color.WHITE);
+        
+    	DefaultListModel<Level> lstLevelModel = new DefaultListModel<Level>();
+        for (Level level : Level.getAllLevels()) {
+            lstLevelModel.addElement(level);
+        }
+        
+        lstLevel.setModel(lstLevelModel);
+        lstLevel.setSelectedValue(Level.A_BRIDGE_TOO_FAR, true);
+        
+        lstLevel.setCellRenderer(new DefaultListCellRenderer() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+        	public Component getListCellRendererComponent(JList<?> list,
+        			Object value, int index, boolean isSelected,
+        			boolean cellHasFocus) {
+                Component component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                setText(((Level) value).getName());
+                return component;
+        	}
+        });
+        
+        lstLevel.addListSelectionListener(new TableUpdatingListener());
+        
         JLabel lblImage = new JLabel("");
         lblImage.setIcon(new ImageIcon(MainWindow.class.getResource("/elliottkatz/burnout/gui/burnout.jpg")));
         lblImage.setBounds(0, 0, 822, 507);
         frmBurnoutScores.getContentPane().add(lblImage);
-        
+                
         chckbxShowRom.addItemListener(new TableUpdatingListener());
         chckbxShowKat.addItemListener(new TableUpdatingListener());
         
@@ -282,7 +296,7 @@ public class MainWindow {
 			playersToShow.add(Player.KAT);
 		}
 		tableModel.setScores(scoreDao.getScoresByLevelAndPlayers(
-				(Level) cmbLevel.getSelectedItem(), playersToShow));
+				(Level) lstLevel.getSelectedValue(), playersToShow));
 		scoreTableRenderer.computeMins();
 		tableModel.fireTableDataChanged();
 		scrollToBottom();
@@ -298,7 +312,7 @@ public class MainWindow {
     	boolean fail = false;
     	String error = "";
         try {
-			scoreDao.createScore((Player.getByName(lblCurrentPlayer.getText())), (Level)cmbLevel.getSelectedItem(), Float.parseFloat(txtScore.getText()), txtNotes.getText());
+			scoreDao.createScore((Player.getByName(lblCurrentPlayer.getText())), (Level)lstLevel.getSelectedValue(), Float.parseFloat(txtScore.getText()), txtNotes.getText());
 		} catch (Exception e) {
 			fail = true;
 			error = e.getMessage();
@@ -324,12 +338,17 @@ public class MainWindow {
 				.setText(otherPlayer.toString());
 	}
     
-    private class TableUpdatingListener implements ItemListener {
+	private class TableUpdatingListener implements ItemListener, ListSelectionListener {
 
-        @Override
-        public void itemStateChanged(ItemEvent e) {
-            populateTable();
-        }
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			populateTable();
+		}
 
-    }
+		@Override
+		public void valueChanged(ListSelectionEvent e) {
+			populateTable();
+		}
+
+	}
 }
