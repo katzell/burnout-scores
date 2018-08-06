@@ -21,6 +21,9 @@ public class ScoreComparator implements Comparator<Score> {
             return Float.compare(v2, v1);
         case TIME:
             if (v1 == 0) {
+            	if(v2 == 0) {
+            		return 0;
+            	}
                 return 1;
             }
             if (v2 == 0) {
