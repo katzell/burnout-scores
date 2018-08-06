@@ -24,6 +24,7 @@ public class ScoreTableRenderer extends DefaultTableCellRenderer {
     
     private Score romMin;
     private Score katMin;
+    private Score overallMin;
     
     public ScoreTableRenderer(ScoreTableModel model) {
         this.model = model;
@@ -35,7 +36,10 @@ public class ScoreTableRenderer extends DefaultTableCellRenderer {
     {
         Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         Score theScore = model.getScores().get(row);
-        if(theScore.equals(romMin) || theScore.equals(katMin)) {
+        if(theScore.equals(overallMin)) {
+        	c.setBackground(Color.YELLOW);
+        }
+        else if(theScore.equals(romMin) || theScore.equals(katMin)) {
             c.setBackground(Color.GREEN);
         }
         else {
@@ -48,6 +52,8 @@ public class ScoreTableRenderer extends DefaultTableCellRenderer {
         sortedScores = new ArrayList<Score>(model.getScores());
         
         Collections.sort(sortedScores, SCORE_COMPARATOR);
+        
+        overallMin = sortedScores.get(0);
         
         for(Score score : sortedScores) {
             if(score.getPlayer() == Player.ROM) {
